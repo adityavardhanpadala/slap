@@ -21,12 +21,14 @@ async fn main() {
         
     let screens = Screen::all().unwrap();
     
+    // TODO: Check if primary exists and exit if doesn't explaining to the user
     let main: Screen = *screens.iter().filter(|x| x.display_info.is_primary == true).collect::<Vec<_>>()[0];
     
     println!("Capturing primary screen {:?}", main);
 
     println!("Emptying snaps dir");
     
+    // TODO: Mkdir if doesn't exist
     let _ = tokio::fs::remove_file("snaps/*").await;
     let _ = tokio::fs::remove_file("output.mp4").await;
     
@@ -40,9 +42,10 @@ async fn main() {
     });
 
     loop {
+        // TODO check if main is locked or not
         let buf = main.capture().unwrap().to_png().unwrap();
         fs::write(format!("snaps/{}.png", frames), buf).unwrap(); 
-        thread::sleep(time::Duration::from_millis(2000));
+        thread::sleep(time::Duration::from_secs(60));
         
         frames+=1;
         
