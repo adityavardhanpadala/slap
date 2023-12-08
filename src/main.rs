@@ -2,6 +2,9 @@ use tokio::process::Command;
 
 use screenshots::Screen;
 use std::{thread, fs, time, io::Write};
+use chrono;
+
+const HOSTNAME: &str = "misato";
 
 fn make_timelapse() {
     
@@ -15,7 +18,7 @@ fn make_timelapse() {
 
 #[tokio::main]
 async fn main() {
-    println!("slap 0.69 - A simple tool to just take primary screen timelapses");
+    println!("slap 0.69.1 - A simple tool to just take primary screen timelapses");
 
     let mut frames: u64 = 0;
         
@@ -26,9 +29,13 @@ async fn main() {
     
     println!("Capturing primary screen {:?}", main);
 
-    println!("Emptying snaps dir");
+    // Check if there's a snaps dir
+    if !fs::metadata("snaps").is_ok() {
+        println!("Creating snaps dir");
+        fs::create_dir("snaps").unwrap();
+    }
     
-    // TODO: Mkdir if doesn't exist
+    println!("Emptying snaps dir");
     let _ = tokio::fs::remove_file("snaps/*").await;
     let _ = tokio::fs::remove_file("output.mp4").await;
     
@@ -44,7 +51,12 @@ async fn main() {
     loop {
         // TODO check if main is locked or not
         let buf = main.capture().unwrap().to_png().unwrap();
-        fs::write(format!("snaps/{}.png", frames), buf).unwrap(); 
+        // Also check if the snap size can be reduced
+        // Check if the image is all black (Then don't save)
+        // Save image with time to ensure more info with name
+        // Get time in HH:MM:SS
+        let time = chrono::Local::now().format("%H-%M-%S").to_string();
+        fs::write(format!("snaps/{}-{}-{}.png", HOSTNAME,frames,time), buf).unwrap(); 
         thread::sleep(time::Duration::from_secs(60));
         
         frames+=1;
