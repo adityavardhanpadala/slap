@@ -2,9 +2,8 @@ use tokio::process::Command;
 
 use screenshots::Screen;
 use std::{thread, fs, time, io::Write};
+use nix::unistd;
 use chrono;
-
-const HOSTNAME: &str = "misato";
 
 fn make_timelapse() {
     
@@ -28,6 +27,10 @@ async fn main() {
     let main: Screen = *screens.iter().filter(|x| x.display_info.is_primary == true).collect::<Vec<_>>()[0];
     
     println!("Capturing primary screen {:?}", main);
+    
+    // Get hostname
+    let hostname = unistd::gethostname().expect("Failed getting hostname");
+    let hostname = hostname.into_string().expect("Hostname wasn't valid UTF-8");
 
     // Check if there's a snaps dir
     if !fs::metadata("snaps").is_ok() {
@@ -56,7 +59,7 @@ async fn main() {
         // Save image with time to ensure more info with name
         // Get time in HH:MM:SS
         let time = chrono::Local::now().format("%H-%M-%S").to_string();
-        fs::write(format!("snaps/{}-{}-{}.png", HOSTNAME,frames,time), buf).unwrap(); 
+        fs::write(format!("snaps/{}-{}-{}.png", hostname,frames,time), buf).unwrap(); 
         thread::sleep(time::Duration::from_secs(60));
         
         frames+=1;
