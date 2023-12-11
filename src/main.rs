@@ -46,8 +46,6 @@ async fn main() {
     let _ = tokio::fs::remove_file("snaps/*").await;
     let _ = tokio::fs::remove_file("output.mp4").await;
 
-    
-
     tokio::spawn(async move {
         tokio::signal::ctrl_c().await.unwrap();
         // make_timelapse();
@@ -70,7 +68,7 @@ async fn main() {
         fs::write(format!("snaps/{}-{}-{}.png", hostname,frames,time), buf).unwrap(); 
         // file <filename>.png
         // duration <seconds>
-        let track_data = format!("file snaps/{}-{}-{}.png\n duration 1\n",hostname,frames,time);
+        let track_data = format!("file snaps/{}-{}-{}.png\n duration 0.1\n",hostname,frames,time);
         _ = track_data_file.write_all(track_data.as_bytes());
         thread::sleep(time::Duration::from_secs(60));
         
