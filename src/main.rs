@@ -1,16 +1,16 @@
-use screenshots::Screen;
-use std::{thread, fs, time, io::Write};
-use nix::unistd;
 use chrono::Local;
+use nix::unistd;
+use screenshots::Screen;
 use std::fs::OpenOptions;
+use std::{fs, io::Write, thread, time};
 // use oxipng::{optimize_from_memory};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 /*
 fn make_timelapse() {
-    
+
     println!("Making timelapse");
-    
+
     let _ = Command::new("ffmpeg")
                         .args(["-framerate", "24", "-i", "snaps/%d.png", "output.mp4"])
                         .spawn()
@@ -20,15 +20,21 @@ fn make_timelapse() {
 
 #[tokio::main]
 async fn main() {
-    println!("slap {} - A simple tool to just take primary screen timelapses",VERSION);
+    println!(
+        "slap {} - A simple tool to just take primary screen timelapses",
+        VERSION
+    );
 
     let mut frames: u64 = 0;
-        
+
     let screens = Screen::all().expect("Failed to find display");
-    
+
     // TODO: Check if primary exists and exit if doesn't explaining to the user
-    let main: Screen = *screens.iter().filter(|x| x.display_info.is_primary).collect::<Vec<_>>()[0];
-    
+    let main: Screen = *screens
+        .iter()
+        .filter(|x| x.display_info.is_primary)
+        .collect::<Vec<_>>()[0];
+
     // Get hostname
     let hostname = unistd::gethostname().expect("Failed getting hostname");
     let hostname = hostname.into_string().expect("Hostname wasn't valid UTF-8");
@@ -40,7 +46,11 @@ async fn main() {
     }
 
     // Input file type
-    let mut track_data_file = OpenOptions::new().create(true).append(true).open("track.data").expect("Failed to open file");
+    let mut track_data_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("track.data")
+        .expect("Failed to open file");
 
     println!("Emptying snaps dir");
     let _ = tokio::fs::remove_file("snaps/*").await;
@@ -56,7 +66,11 @@ async fn main() {
 
     loop {
         // TODO check if main is locked or not
-        let buf = main.capture().unwrap().to_png().expect("Capturing the screen");
+        let buf = main
+            .capture()
+            .unwrap()
+            .to_png()
+            .expect("Capturing the screen");
         // Also check if the snap size can be reduced
         // Not worth the extra CPU anyway
         // let options = oxipng::Options::from_preset(2);
@@ -65,17 +79,20 @@ async fn main() {
         // Save image with time to ensure more info with name
         // Get time in HH:MM:SS
         let time = Local::now().format("%H-%M-%S").to_string();
-        fs::write(format!("snaps/{}-{}-{}.png", hostname,frames,time), buf).unwrap(); 
+        fs::write(format!("snaps/{}-{}-{}.png", hostname, frames, time), buf).unwrap();
         // file <filename>.png
         // duration <seconds>
-        let track_data = format!("file snaps/{}-{}-{}.png\n duration 0.1\n",hostname,frames,time);
+        let track_data = format!(
+            "file snaps/{}-{}-{}.png\n duration 0.1\n",
+            hostname, frames, time
+        );
         _ = track_data_file.write_all(track_data.as_bytes());
         thread::sleep(time::Duration::from_secs(60));
-        
-        frames+=1;
-        
+
+        frames += 1;
+
         let _ = std::io::stdout().flush();
 
         println!("Captured {} frames", frames);
-    };
+    }
 }
