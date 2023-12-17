@@ -3,20 +3,29 @@ use nix::unistd;
 use screenshots::Screen;
 use std::fs::OpenOptions;
 use std::{fs, io::Write, thread, time};
+use tokio::process::Command;
 // use oxipng::{optimize_from_memory};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-/*
-fn make_timelapse() {
 
+async fn make_timelapse() {
     println!("Making timelapse");
 
     let _ = Command::new("ffmpeg")
-                        .args(["-framerate", "24", "-i", "snaps/%d.png", "output.mp4"])
-                        .spawn()
-                        .expect("Failed to create a timelapse");
+        .args([
+            "-framerate",
+            "24",
+            "-pattern_glob",
+            "-i",
+            "snaps/*.png",
+            "output.mp4",
+        ])
+        .spawn()
+        .expect("Failed to start ffmpeg to create the timelapse")
+        .wait()
+        .await
+        .expect("Failed to complete timelapse creation");
 }
-*/
 
 #[tokio::main]
 async fn main() {
@@ -58,9 +67,9 @@ async fn main() {
 
     tokio::spawn(async move {
         tokio::signal::ctrl_c().await.unwrap();
-        // make_timelapse();
-        // println!("Cleaning up snaps");
-        // let _ = tokio::fs::remove_file("snaps/*").await;
+        make_timelapse().await;
+        println!("Cleaning up snaps");
+        let _ = tokio::fs::remove_file("snaps/*").await;
         std::process::exit(0);
     });
 
