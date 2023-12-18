@@ -14,17 +14,29 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 async fn make_timelapse<P: AsRef<Path>>(screenshots_dir: P, screenlapses_dir: P) {
     println!("Making timelapse");
 
-    let screenshots_dir = screenshots_dir.as_ref().to_string_lossy();
-    let screenlapses_dir = screenlapses_dir.as_ref().to_string_lossy();
+    // ensure the the output dir exists
+    if let Ok(exists) = tokio::fs::try_exists(&screenlapses_dir).await {
+        if !exists {
+            println!(
+                "Creating lapses dir: {}",
+                screenlapses_dir.as_ref().to_string_lossy()
+            );
+            _ = std::fs::create_dir(&screenlapses_dir);
+        }
+    }
+
+    let inputs = screenshots_dir.as_ref().join("*.png");
+    let output = screenlapses_dir.as_ref().join("output.mp4");
 
     let _ = Command::new("ffmpeg")
         .args([
             "-framerate",
             "24",
-            "-pattern_glob",
+            "-pattern_type",
+            "glob",
             "-i",
-            &format!("{}/*.png", screenshots_dir),
-            &format!("{}/output.mp4", screenlapses_dir),
+            inputs.to_str().unwrap(),
+            output.to_str().unwrap(),
         ])
         .spawn()
         .expect("Failed to start ffmpeg to create the timelapse")
@@ -93,7 +105,7 @@ async fn main() {
             &screenshots_dir,
         );
 
-        thread::sleep(time::Duration::from_secs(60));
+        thread::sleep(time::Duration::from_millis(opts.interval_ms));
         frames += 1;
         let _ = std::io::stdout().flush();
 
@@ -104,9 +116,14 @@ async fn main() {
 async fn clean_existing_stuff<P: AsRef<Path>>(screenshots_dir: P, screenlapses_dir: P) {
     println!("Emptying snaps dir");
     let screenshots_dir = screenshots_dir.as_ref().to_string_lossy();
-    let screenlapses_dir = screenlapses_dir.as_ref().to_string_lossy();
     let _ = tokio::fs::remove_file(format!("{}/*", screenshots_dir)).await;
-    let _ = tokio::fs::remove_file(format!("{}/output.mp4", screenlapses_dir)).await;
+
+    let output = screenlapses_dir.as_ref().join("output.mp4");
+    if let Ok(exists) = tokio::fs::try_exists(&output).await {
+        if exists {
+            let _ = tokio::fs::remove_file(output).await;
+        }
+    }
 }
 
 // TODO:shank: cleanup this function (shouldn't require a bazillion args...)
