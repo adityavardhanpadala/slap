@@ -10,4 +10,5 @@ screenshots = "0.6.0"
 tokio = { version = "1.29.1", features = ["full"] }
 chrono = "0.4.31"
 nix = { version = "0.27.1",features=["hostname"]}
+clap = { version = "4.4.11", features = ["derive"] }
 # oxipng = { version = "9.0"}
